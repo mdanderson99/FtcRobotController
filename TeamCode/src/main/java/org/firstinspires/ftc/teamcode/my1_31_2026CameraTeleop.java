@@ -4,7 +4,6 @@ package org.firstinspires.ftc.teamcode;
 /*
  * Copyright (c) 2025 FIRST
  * All rights reserved.
- * (standard license text unchanged)
  */
 
 
@@ -107,10 +106,14 @@ public class my1_31_2026CameraTeleop extends OpMode {
         aprilTag.setDecimation(2);
 
         // Create the vision portal by using a builder.
-        visionPortal = new VisionPortal.Builder()
-                .setCamera(hardwareMap.get(WebcamName.class, "Webcam 1"))
-                .addProcessor(aprilTag)
-                .build();
+        try {
+            visionPortal = new VisionPortal.Builder()
+                    .setCamera(hardwareMap.get(WebcamName.class, "Webcam 1"))
+                    .addProcessor(aprilTag)
+                    .build();
+        } catch (Exception e) {
+            telemetry.addData("Error", "Camera could not be initialized");
+        }
     }
 
     @Override
@@ -130,50 +133,34 @@ public class my1_31_2026CameraTeleop extends OpMode {
         desiredTag  = null;
 
         // Step through the list of detected tags and look for a matching tag
-        List<AprilTagDetection> currentDetections = aprilTag.getDetections();
-        for (AprilTagDetection detection : currentDetections) {
-            if (detection.metadata != null) {
-                if ((DESIRED_TAG_ID < 0) || (detection.id == DESIRED_TAG_ID)) {
-                    targetFound = true;
-                    desiredTag = detection;
-                    break;
-                } else {
-                    telemetry.addData("Skipping", "Tag ID %d is not desired", detection.id);
+        if (aprilTag != null) {
+            List<AprilTagDetection> currentDetections = aprilTag.getDetections();
+            for (AprilTagDetection detection : currentDetections) {
+                if (detection.metadata != null) {
+                    if ((DESIRED_TAG_ID < 0) || (detection.id == DESIRED_TAG_ID)) {
+                        targetFound = true;
+                        desiredTag = detection;
+                        break;
+                    }
                 }
-            } else {
-                telemetry.addData("Unknown", "Tag ID %d is not in TagLibrary", detection.id);
             }
         }
 
         // 1. Logic & Calculations
         if (targetFound) {
-            /*
-             * CAMERA ORIENTATION ADJUSTMENT:
-             * Since the camera is mounted "perpendicular" (rotated 90 degrees), the axes are swapped.
-             * 
-             * Standard Mount: X = Left/Right, Y = Up/Down, Bearing = Horiz Angle, Yaw = Tag Rotation
-             * Rotated 90 Deg: Y = Left/Right, X = Up/Down, Elevation = Horiz Angle, Pitch = Tag Rotation
-             * 
-             * We use the 'range * tan(angle)' calculation to find lateral offset from the tag normal.
-             */
-            
-            // Using Pitch instead of Yaw because the camera is sideways
             double tagRotationDegrees = desiredTag.ftcPose.pitch; 
             double horizontalError = desiredTag.ftcPose.range * tan(toRadians(tagRotationDegrees));
             
-            // Centering check: Your original 2.61 inch threshold
             if (abs(horizontalError) < 2.61) {
                 clearToShoot = true;
             } else {
                 clearToShoot = false;
             }
 
-            // Keep specific logic for these tags
             if (abs(horizontalError) >= 2.61 && (desiredTag.id == 20 || desiredTag.id == 24)) {
                 clearToShoot = false;
             }
         } else {
-            // Reset if no target found
             clearToShoot = false;
         }
 
@@ -196,37 +183,35 @@ public class my1_31_2026CameraTeleop extends OpMode {
 
         // 4. Hood Controls
         if (gamepad1.left_bumper && gamepad1.left_trigger > 0) {
-            hood.setPosition(0.45);
-            LAUNCHER_TARGET_VELOCITY = 1325;
-            LAUNCHER_MIN_VELOCITY = 1275;
+            hood.setPosition(0.525);
+            LAUNCHER_TARGET_VELOCITY = 1250;
+            LAUNCHER_MIN_VELOCITY = 1200;
         }   else if (gamepad1.left_bumper) {
-            hood.setPosition(0.5);
-            LAUNCHER_TARGET_VELOCITY = 1375;
-            LAUNCHER_MIN_VELOCITY = 1325;
+            hood.setPosition(0.575);
+            LAUNCHER_TARGET_VELOCITY = 1300;
+            LAUNCHER_MIN_VELOCITY = 1255;
         }   else if (gamepad1.left_trigger > 0) {
-            hood.setPosition(0.55);
-            LAUNCHER_TARGET_VELOCITY = 1425;
-            LAUNCHER_MIN_VELOCITY = 1375;
+            hood.setPosition(0.625);
+            LAUNCHER_TARGET_VELOCITY = 1350;
+            LAUNCHER_MIN_VELOCITY = 1300;
         }   else {
-            hood.setPosition(0.45);
-            LAUNCHER_TARGET_VELOCITY = 1325;
-            LAUNCHER_MIN_VELOCITY = 1275;
+            hood.setPosition(0.525);
+            LAUNCHER_TARGET_VELOCITY = 1250;
+            LAUNCHER_MIN_VELOCITY = 1200;
         }
 
         launch(gamepad1.right_bumper);
 
         // 5. Telemetry
+        telemetry.addData("Camera State", visionPortal != null ? visionPortal.getCameraState() : "NULL");
         if (targetFound) {
             telemetry.addData("Found", "ID %d (%s)", desiredTag.id, desiredTag.metadata.name);
-            telemetry.addData("Range",  "%5.1f inches", desiredTag.ftcPose.range);
-            telemetry.addData("Horiz Error (Calc)", "%5.1f inches", desiredTag.ftcPose.range * tan(toRadians(desiredTag.ftcPose.pitch)));
-            telemetry.addData("Tag Rotation (Pitch)", "%3.0f deg", desiredTag.ftcPose.pitch);
+            telemetry.addData("Horiz Error", "%5.1f inches", desiredTag.ftcPose.range * tan(toRadians(desiredTag.ftcPose.pitch)));
         } else {
             telemetry.addData("Target", "Not Found");
         }
 
         telemetry.addData("Clear to shoot", clearToShoot);
-        telemetry.addData("Launch State", launchState);
         telemetry.addData("Launcher Velocity", launcher.getVelocity());
         telemetry.addData("Hood Position", hood.getPosition());
         
@@ -234,10 +219,11 @@ public class my1_31_2026CameraTeleop extends OpMode {
     }
 
     @Override
-    public void stop() { }
-
-    double softenedDrive(double x) {
-        return 0.7 * pow(x, 3) + 0.3 * x;
+    public void stop() {
+        // Crucial for releasing the camera back to the system
+        if (visionPortal != null) {
+            visionPortal.close();
+        }
     }
 
     void launch(boolean shotRequested) {
@@ -273,7 +259,7 @@ public class my1_31_2026CameraTeleop extends OpMode {
     }
 
     private void checkAndSetCameraControls() {
-        if (!cameraSettingsApplied && visionPortal.getCameraState() == VisionPortal.CameraState.STREAMING) {
+        if (visionPortal != null && !cameraSettingsApplied && visionPortal.getCameraState() == VisionPortal.CameraState.STREAMING) {
             ExposureControl exposureControl = visionPortal.getCameraControl(ExposureControl.class);
             if (exposureControl != null) {
                 exposureControl.setMode(ExposureControl.Mode.Manual);
