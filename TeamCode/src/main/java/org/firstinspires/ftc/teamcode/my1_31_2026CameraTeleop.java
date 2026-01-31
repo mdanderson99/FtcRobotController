@@ -6,7 +6,7 @@ package org.firstinspires.ftc.teamcode;
  * All rights reserved.
  * (standard license text unchanged)
  */
-//test
+
 
 import static com.qualcomm.robotcore.hardware.DcMotor.ZeroPowerBehavior.BRAKE;
 
@@ -153,13 +153,15 @@ public class my1_31_2026CameraTeleop extends OpMode {
              * 
              * Standard Mount: X = Left/Right, Y = Up/Down, Bearing = Horiz Angle, Yaw = Tag Rotation
              * Rotated 90 Deg: Y = Left/Right, X = Up/Down, Elevation = Horiz Angle, Pitch = Tag Rotation
+             * 
+             * We use the 'range * tan(angle)' calculation to find lateral offset from the tag normal.
              */
             
-            // horizontalError is now the actual distance (in inches) from the center of the tag.
-            // We use .y because that is now the robot's horizontal plane.
-            double horizontalError = desiredTag.ftcPose.y; 
+            // Using Pitch instead of Yaw because the camera is sideways
+            double tagRotationDegrees = desiredTag.ftcPose.pitch; 
+            double horizontalError = desiredTag.ftcPose.range * tan(toRadians(tagRotationDegrees));
             
-            // Centering check: Are we within 2.61 inches of the center line?
+            // Centering check: Your original 2.61 inch threshold
             if (abs(horizontalError) < 2.61) {
                 clearToShoot = true;
             } else {
@@ -176,7 +178,6 @@ public class my1_31_2026CameraTeleop extends OpMode {
         }
 
         // 2. Drive Controls
-        // ⭐ FRONT/BACK FLIPPED ⭐
         double x = -gamepad1.left_stick_y;
         double y =  gamepad1.left_stick_x;
         double rotation = gamepad1.right_stick_x;
@@ -214,13 +215,11 @@ public class my1_31_2026CameraTeleop extends OpMode {
 
         launch(gamepad1.right_bumper);
 
-        // 5. Telemetry (NO update() calls here!)
+        // 5. Telemetry
         if (targetFound) {
             telemetry.addData("Found", "ID %d (%s)", desiredTag.id, desiredTag.metadata.name);
             telemetry.addData("Range",  "%5.1f inches", desiredTag.ftcPose.range);
-            // Swapping labels for the driver's sake based on perpendicular mount
-            telemetry.addData("Horiz Angle (Elev)", "%3.0f deg", desiredTag.ftcPose.elevation);
-            telemetry.addData("Horiz Offset (Y)", "%5.1f inches", desiredTag.ftcPose.y);
+            telemetry.addData("Horiz Error (Calc)", "%5.1f inches", desiredTag.ftcPose.range * tan(toRadians(desiredTag.ftcPose.pitch)));
             telemetry.addData("Tag Rotation (Pitch)", "%3.0f deg", desiredTag.ftcPose.pitch);
         } else {
             telemetry.addData("Target", "Not Found");
@@ -230,10 +229,7 @@ public class my1_31_2026CameraTeleop extends OpMode {
         telemetry.addData("Launch State", launchState);
         telemetry.addData("Launcher Velocity", launcher.getVelocity());
         telemetry.addData("Hood Position", hood.getPosition());
-        telemetry.addData("Motors", "LF %.2f, RF %.2f, LB %.2f, RB %.2f", 
-            leftFront.getPower(), rightFront.getPower(), leftBack.getPower(), rightBack.getPower());
         
-        // 6. Final Update (Only once at the very end)
         telemetry.update();
     }
 
