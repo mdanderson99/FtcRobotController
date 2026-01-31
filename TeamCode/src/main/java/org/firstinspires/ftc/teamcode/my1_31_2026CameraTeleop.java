@@ -197,20 +197,20 @@ public class my1_31_2026CameraTeleop extends OpMode {
         // 4. Hood Controls
         if (gamepad1.left_bumper && gamepad1.left_trigger > 0) {
             hood.setPosition(0.45);
-            LAUNCHER_TARGET_VELOCITY = 1325;
-            LAUNCHER_MIN_VELOCITY = 1275;
+            LAUNCHER_TARGET_VELOCITY = 1250;
+            LAUNCHER_MIN_VELOCITY = 1200;
         }   else if (gamepad1.left_bumper) {
             hood.setPosition(0.5);
-            LAUNCHER_TARGET_VELOCITY = 1375;
-            LAUNCHER_MIN_VELOCITY = 1325;
+            LAUNCHER_TARGET_VELOCITY = 1300;
+            LAUNCHER_MIN_VELOCITY = 1255;
         }   else if (gamepad1.left_trigger > 0) {
             hood.setPosition(0.55);
-            LAUNCHER_TARGET_VELOCITY = 1425;
-            LAUNCHER_MIN_VELOCITY = 1375;
+            LAUNCHER_TARGET_VELOCITY = 1350;
+            LAUNCHER_MIN_VELOCITY = 1300;
         }   else {
             hood.setPosition(0.45);
-            LAUNCHER_TARGET_VELOCITY = 1325;
-            LAUNCHER_MIN_VELOCITY = 1275;
+            LAUNCHER_TARGET_VELOCITY = 1250;
+            LAUNCHER_MIN_VELOCITY = 1200;
         }
 
         launch(gamepad1.right_bumper);
