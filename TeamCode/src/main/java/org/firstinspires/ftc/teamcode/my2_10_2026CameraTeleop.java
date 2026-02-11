@@ -30,15 +30,15 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-@TeleOp(name = "my1_31_2026CameraTeleop", group = "StarterBot")
+@TeleOp(name = "my2_10_2026CameraTeleop", group = "StarterBot")
 //@Disabled
-public class my1_31_2026CameraTeleop extends OpMode {
+public class my2_10_2026CameraTeleop extends OpMode {
     final double FEED_TIME_SECONDS = 0.20;
     final double STOP_SPEED = 0.0;
     final double FULL_SPEED = 1.0;
     private static final int DESIRED_TAG_ID = -1;     // Choose the tag you want to approach or set to -1 for ANY tag.
     private VisionPortal visionPortal;               // Used to manage the video source.
-    private AprilTagProcessor aprilTag;              // Used for managing the AprilTag detection process.
+    private AprilTagProcessor aprilTag = null;              // Used for managing the AprilTag detection process.
     private AprilTagDetection desiredTag = null;     // Used to hold the data for a detected AprilTag
     double LAUNCHER_TARGET_VELOCITY = 1300;
     double LAUNCHER_MIN_VELOCITY = 1270;
@@ -100,6 +100,7 @@ public class my1_31_2026CameraTeleop extends OpMode {
         telemetry.addData("Status", "Initialized");
 
         // Create the AprilTag processor by using a builder.
+        // You MUST call .build() to create the processor from the builder.
         aprilTag = new AprilTagProcessor.Builder().build();
 
         // Adjust Image Decimation to trade-off detection-range for detection-rate.
@@ -107,10 +108,14 @@ public class my1_31_2026CameraTeleop extends OpMode {
 
         // Create the vision portal by using a builder.
         try {
-            visionPortal = new VisionPortal.Builder()
-                    .setCamera(hardwareMap.get(WebcamName.class, "Webcam 1"))
-                    .addProcessor(aprilTag)
-                    .build();
+            VisionPortal.Builder builder = new VisionPortal.Builder();
+
+            builder.setCamera(hardwareMap.get(WebcamName.class, "Webcam 1"));
+            telemetry.addData("Step", "1 complete");
+            builder.addProcessor(aprilTag);
+            telemetry.addData("Step", "2 complete");
+            visionPortal = builder.build();
+            telemetry.addData("Step", "3 complete");
         } catch (Exception e) {
             telemetry.addData("Error", "Camera could not be initialized");
         }
@@ -148,6 +153,7 @@ public class my1_31_2026CameraTeleop extends OpMode {
 
         // 1. Logic & Calculations
         if (targetFound) {
+            // Using pitch because of the 90-degree rotated camera mount
             double tagRotationDegrees = desiredTag.ftcPose.pitch; 
             double horizontalError = desiredTag.ftcPose.range * tan(toRadians(tagRotationDegrees));
             
@@ -183,21 +189,21 @@ public class my1_31_2026CameraTeleop extends OpMode {
 
         // 4. Hood Controls
         if (gamepad1.left_bumper && gamepad1.left_trigger > 0) {
-            hood.setPosition(0.525);
-            LAUNCHER_TARGET_VELOCITY = 1250;
-            LAUNCHER_MIN_VELOCITY = 1200;
-        }   else if (gamepad1.left_bumper) {
-            hood.setPosition(0.575);
-            LAUNCHER_TARGET_VELOCITY = 1300;
-            LAUNCHER_MIN_VELOCITY = 1255;
-        }   else if (gamepad1.left_trigger > 0) {
-            hood.setPosition(0.625);
+            hood.setPosition(0.6);
             LAUNCHER_TARGET_VELOCITY = 1350;
             LAUNCHER_MIN_VELOCITY = 1300;
+        }   else if (gamepad1.left_bumper) {
+            hood.setPosition(0.65);
+            LAUNCHER_TARGET_VELOCITY = 1400;
+            LAUNCHER_MIN_VELOCITY = 1350;
+        }   else if (gamepad1.left_trigger > 0) {
+            hood.setPosition(0.7);
+            LAUNCHER_TARGET_VELOCITY = 1450;
+            LAUNCHER_MIN_VELOCITY = 1400;
         }   else {
-            hood.setPosition(0.525);
-            LAUNCHER_TARGET_VELOCITY = 1250;
-            LAUNCHER_MIN_VELOCITY = 1200;
+            hood.setPosition(0.6);
+            LAUNCHER_TARGET_VELOCITY = 1350;
+            LAUNCHER_MIN_VELOCITY = 1300;
         }
 
         launch(gamepad1.right_bumper);
@@ -207,6 +213,7 @@ public class my1_31_2026CameraTeleop extends OpMode {
         if (targetFound) {
             telemetry.addData("Found", "ID %d (%s)", desiredTag.id, desiredTag.metadata.name);
             telemetry.addData("Horiz Error", "%5.1f inches", desiredTag.ftcPose.range * tan(toRadians(desiredTag.ftcPose.pitch)));
+            telemetry.addData("DEBUG Pitch", "%3.1f", desiredTag.ftcPose.pitch);
         } else {
             telemetry.addData("Target", "Not Found");
         }
@@ -220,7 +227,14 @@ public class my1_31_2026CameraTeleop extends OpMode {
 
     @Override
     public void stop() {
-        // Crucial for releasing the camera back to the system
+        /* Safe close: only call close if it's not already closed/closing to prevent hangs
+        Some wierd things here, I don't know why so just please don't uncomment this
+        if (visionPortal != null) {
+            VisionPortal.CameraState state = visionPortal.getCameraState();
+            if (state != VisionPortal.CameraState.CAMERA_DEVICE_CLOSED && 
+                state != VisionPortal.CameraState.CLOSING_CAMERA_DEVICE) {
+                visionPortal.close();
+            }*/
         if (visionPortal != null) {
             visionPortal.close();
         }

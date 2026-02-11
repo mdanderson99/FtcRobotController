@@ -1,4 +1,7 @@
+package org.firstinspires.ftc.teamcode;
+
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -8,6 +11,8 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
+import static com.qualcomm.robotcore.hardware.DcMotor.ZeroPowerBehavior.BRAKE;
+
 /*
  * Copyright (c) 2025 Base 10 Assets, LLC
  * All rights reserved.
@@ -15,11 +20,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
  * FTC Autonomous OpMode for the 2025-2026 DECODE season.
  * This robot launches 3 balls and drives off the launch line.
  */
-
-//package org.firstinspires.ftc.teamcode;
-
-import static com.qualcomm.robotcore.hardware.DcMotor.ZeroPowerBehavior.BRAKE;
-
+@Disabled
 @Autonomous(name="my12_13_2025Auto", group="StarterBot")
 public class my12_13_2025Auto extends OpMode {
 
@@ -278,4 +279,5 @@ public class my12_13_2025Auto extends OpMode {
         }*/
         return false;
     }
+
 }
