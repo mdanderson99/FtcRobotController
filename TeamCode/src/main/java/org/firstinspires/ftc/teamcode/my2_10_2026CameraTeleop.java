@@ -1,5 +1,3 @@
-//Variable Hood Mecanum Teleop
-
 package org.firstinspires.ftc.teamcode;
 /*
  * Copyright (c) 2025 FIRST

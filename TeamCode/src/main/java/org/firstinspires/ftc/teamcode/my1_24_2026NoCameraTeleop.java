@@ -4,7 +4,6 @@ package org.firstinspires.ftc.teamcode;
 /*
  * Copyright (c) 2025 FIRST
  * All rights reserved.
- * (standard license text unchanged)
  */
 
 import static com.qualcomm.robotcore.hardware.DcMotor.ZeroPowerBehavior.BRAKE;
