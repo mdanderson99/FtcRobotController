@@ -53,6 +53,7 @@ public class my2_10_2026CameraTeleop extends OpMode {
     ElapsedTime feederTimer = new ElapsedTime();
     private boolean cameraSettingsApplied = false;
 
+    private boolean useCameraCode = true;
     private enum LaunchState {
         IDLE,
         SPIN_UP,
@@ -105,17 +106,19 @@ public class my2_10_2026CameraTeleop extends OpMode {
         aprilTag.setDecimation(2);
 
         // Create the vision portal by using a builder.
-        try {
-            VisionPortal.Builder builder = new VisionPortal.Builder();
+        if (useCameraCode) {
+            try {
+                VisionPortal.Builder builder = new VisionPortal.Builder();
 
-            builder.setCamera(hardwareMap.get(WebcamName.class, "Webcam 1"));
-            telemetry.addData("Step", "1 complete");
-            builder.addProcessor(aprilTag);
-            telemetry.addData("Step", "2 complete");
-            visionPortal = builder.build();
-            telemetry.addData("Step", "3 complete");
-        } catch (Exception e) {
-            telemetry.addData("Error", "Camera could not be initialized");
+                builder.setCamera(hardwareMap.get(WebcamName.class, "Webcam 1"));
+                telemetry.addData("Step", "1 complete");
+                builder.addProcessor(aprilTag);
+                telemetry.addData("Step", "2 complete");
+                visionPortal = builder.build();
+                telemetry.addData("Step", "3 complete");
+            } catch (Exception e) {
+                telemetry.addData("Error", "Camera could not be initialized");
+            }
         }
     }
 
@@ -130,10 +133,11 @@ public class my2_10_2026CameraTeleop extends OpMode {
 
     @Override
     public void loop() {
-        checkAndSetCameraControls();
+        if (useCameraCode)
+            checkAndSetCameraControls();
 
         boolean targetFound = false;
-        desiredTag  = null;
+        desiredTag = null;
 
         // Step through the list of detected tags and look for a matching tag
         if (aprilTag != null) {
@@ -152,9 +156,9 @@ public class my2_10_2026CameraTeleop extends OpMode {
         // 1. Logic & Calculations
         if (targetFound) {
             // Using pitch because of the 90-degree rotated camera mount
-            double tagRotationDegrees = desiredTag.ftcPose.pitch; 
+            double tagRotationDegrees = desiredTag.ftcPose.pitch;
             double horizontalError = desiredTag.ftcPose.range * tan(toRadians(tagRotationDegrees));
-            
+
             if (abs(horizontalError) < 2.61) {
                 clearToShoot = true;
             } else {
@@ -170,7 +174,7 @@ public class my2_10_2026CameraTeleop extends OpMode {
 
         // 2. Drive Controls
         double x = -gamepad1.left_stick_y;
-        double y =  gamepad1.left_stick_x;
+        double y = gamepad1.left_stick_x;
         double rotation = gamepad1.right_stick_x;
 
         leftFront.setPower(x + y + rotation);
@@ -190,15 +194,15 @@ public class my2_10_2026CameraTeleop extends OpMode {
             hood.setPosition(0.6);
             LAUNCHER_TARGET_VELOCITY = 1350;
             LAUNCHER_MIN_VELOCITY = 1300;
-        }   else if (gamepad1.left_bumper) {
+        } else if (gamepad1.left_bumper) {
             hood.setPosition(0.65);
             LAUNCHER_TARGET_VELOCITY = 1400;
             LAUNCHER_MIN_VELOCITY = 1350;
-        }   else if (gamepad1.left_trigger > 0) {
+        } else if (gamepad1.left_trigger > 0) {
             hood.setPosition(0.7);
             LAUNCHER_TARGET_VELOCITY = 1450;
             LAUNCHER_MIN_VELOCITY = 1400;
-        }   else {
+        } else {
             hood.setPosition(0.6);
             LAUNCHER_TARGET_VELOCITY = 1350;
             LAUNCHER_MIN_VELOCITY = 1300;
@@ -207,13 +211,16 @@ public class my2_10_2026CameraTeleop extends OpMode {
         launch(gamepad1.right_bumper);
 
         // 5. Telemetry
-        telemetry.addData("Camera State", visionPortal != null ? visionPortal.getCameraState() : "NULL");
-        if (targetFound) {
-            telemetry.addData("Found", "ID %d (%s)", desiredTag.id, desiredTag.metadata.name);
-            telemetry.addData("Horiz Error", "%5.1f inches", desiredTag.ftcPose.range * tan(toRadians(desiredTag.ftcPose.pitch)));
-            telemetry.addData("DEBUG Pitch", "%3.1f", desiredTag.ftcPose.pitch);
-        } else {
-            telemetry.addData("Target", "Not Found");
+        if (useCameraCode) {
+            telemetry.addData("Camera State", visionPortal != null ? visionPortal.getCameraState() : "NULL");
+
+            if (targetFound) {
+                telemetry.addData("Found", "ID %d (%s)", desiredTag.id, desiredTag.metadata.name);
+                telemetry.addData("Horiz Error", "%5.1f inches", desiredTag.ftcPose.range * tan(toRadians(desiredTag.ftcPose.pitch)));
+                telemetry.addData("DEBUG Pitch", "%3.1f", desiredTag.ftcPose.pitch);
+            } else {
+                telemetry.addData("Target", "Not Found");
+            }
         }
 
         telemetry.addData("Clear to shoot", clearToShoot);
@@ -226,15 +233,13 @@ public class my2_10_2026CameraTeleop extends OpMode {
     @Override
     public void stop() {
         /* Safe close: only call close if it's not already closed/closing to prevent hangs
-        Some wierd things here, I don't know why so just please don't uncomment this
+        Some wierd things here, I don't know why so just please don't uncomment this */
         if (visionPortal != null) {
-            VisionPortal.CameraState state = visionPortal.getCameraState();
-            if (state != VisionPortal.CameraState.CAMERA_DEVICE_CLOSED && 
-                state != VisionPortal.CameraState.CLOSING_CAMERA_DEVICE) {
+                        VisionPortal.CameraState state = visionPortal.getCameraState();
+            if (state != VisionPortal.CameraState.CAMERA_DEVICE_CLOSED &&
+                    state != VisionPortal.CameraState.CLOSING_CAMERA_DEVICE) {
                 visionPortal.close();
-            }*/
-        if (visionPortal != null) {
-            visionPortal.close();
+            }
         }
     }
 
