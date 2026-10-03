@@ -155,8 +155,8 @@ public class my2_10_2026CameraTeleop extends OpMode {
 
         // 1. Logic & Calculations
         if (targetFound) {
-            // Using pitch because of the 90-degree rotated camera mount
-            double tagRotationDegrees = desiredTag.ftcPose.pitch;
+            // Using -pitch because of the -90-degree rotated camera mount
+            double tagRotationDegrees = -desiredTag.ftcPose.pitch;
             double horizontalError = desiredTag.ftcPose.range * tan(toRadians(tagRotationDegrees));
 
             if (abs(horizontalError) < 2.61) {
@@ -216,7 +216,7 @@ public class my2_10_2026CameraTeleop extends OpMode {
 
             if (targetFound) {
                 telemetry.addData("Found", "ID %d (%s)", desiredTag.id, desiredTag.metadata.name);
-                telemetry.addData("Horiz Error", "%5.1f inches", desiredTag.ftcPose.range * tan(toRadians(desiredTag.ftcPose.pitch)));
+                telemetry.addData("Horiz Error", "%5.1f inches", desiredTag.ftcPose.range * tan(toRadians(-desiredTag.ftcPose.pitch)));
                 telemetry.addData("DEBUG Pitch", "%3.1f", desiredTag.ftcPose.pitch);
             } else {
                 telemetry.addData("Target", "Not Found");
