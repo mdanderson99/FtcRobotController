@@ -33,6 +33,10 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
+
 
 /*
  * This file includes a teleop (driver-controlled) file for the goBILDA® StarterBot for the
@@ -61,6 +65,8 @@ public class starterBotTeleop10_3_2026 extends OpMode {
     private CRServo leftIntakeServo = null;
     private CRServo rightIntakeServo = null;
     // private CRServo windmillServo = null;
+
+    private GoBildaPinpointDriver pinpoint; // Declare the Pinpoint driver
 
     /*
      * These two variables are used to control the velocity of the launcher motor.
@@ -104,6 +110,35 @@ public class starterBotTeleop10_3_2026 extends OpMode {
         // windmillServo = hardwareMap.get(CRServo.class, "windmill");
         leftIntakeServo = hardwareMap.get(CRServo.class, "left_intake_servo");
         rightIntakeServo = hardwareMap.get(CRServo.class, "right_intake_servo");
+
+        // Initialize the Pinpoint Odometry Computer
+        pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
+
+        /*
+         * Set the odometry pod positions relative to the point that you want the position to be measured from.
+         * The X pod offset refers to how far sideways from the tracking point the X (forward) odometry pod is.
+         * Left of the center is a positive number, right of center is a negative number.
+         * The Y pod offset refers to how far forwards from the tracking point the Y (strafe) odometry pod is.
+         * Forward of center is a positive number, backwards is a negative number.
+         */
+        pinpoint.setOffsets(0, -31.4, DistanceUnit.MM);
+
+        /*
+         * Set the kind of pods used by your robot.
+         */
+        pinpoint.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
+
+        /*
+         * Set the direction that each of the two odometry pods count.
+         */
+        pinpoint.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.FORWARD,
+                GoBildaPinpointDriver.EncoderDirection.FORWARD);
+
+        /*
+         * Before running the robot, recalibrate the IMU. This needs to happen when the robot is stationary
+         * resetPosAndIMU will reset the position to 0,0,0 and also recalibrate the IMU.
+         */
+        pinpoint.resetPosAndIMU();
 
         /*
          * To drive forward, most robots need the motor on one side to be reversed,
@@ -174,6 +209,9 @@ public class starterBotTeleop10_3_2026 extends OpMode {
      */
     @Override
     public void loop() {
+        // Update the Pinpoint sensor data
+        pinpoint.update();
+
         /*
          * Here we call a function called arcadeDrive. The arcadeDrive function takes the input from
          * the joysticks, and applies power to the left and right drive motor to move the robot
@@ -220,8 +258,17 @@ public class starterBotTeleop10_3_2026 extends OpMode {
          * Show motor powers on the Driver Station via telemetry.
          */
         telemetry.addData("Motors", "left (%.2f), right (%.2f)", leftPower, rightPower);
+        
+        // Show Pinpoint position and velocity on telemetry
+        Pose2D pos = pinpoint.getPosition();
+        telemetry.addData("X (mm)", "%.2f", pos.getX(DistanceUnit.MM));
+        telemetry.addData("Y (mm)", "%.2f", pos.getY(DistanceUnit.MM));
+        telemetry.addData("Heading (deg)", "%.2f", pos.getHeading(AngleUnit.DEGREES));
+        telemetry.addData("Vel X (mm/s)", "%.2f", pinpoint.getVelX(DistanceUnit.MM));
+        telemetry.addData("Vel Y (mm/s)", "%.2f", pinpoint.getVelY(DistanceUnit.MM));
+        
         telemetry.addLine();
-
+        telemetry.update();
     }
 
     /*
